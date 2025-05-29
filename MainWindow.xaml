@@ -1,0 +1,129 @@
+﻿<Window x:Class="Office2PDF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Office2PDF"
+        mc:Ignorable="d"
+        Title="Office2PDF v3.0" Height="900" Width="635">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="59*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,7,10,7" Grid.Column="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <GroupBox Header="软件功能"  Padding="5">
+                    <StackPanel>
+                        <TextBlock TextWrapping="Wrap">
+                            <Run>将 Word、Excel、PPT 批量转为 PDF 文件，</Run>  
+                            <Hyperlink RequestNavigate="Hyperlink_RequestNavigate" NavigateUri="https://evgo2017.com/blog/office2pdf">查看软件主页</Hyperlink>
+                            <Run>。</Run>
+                        </TextBlock>
+                        <Grid Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Run>作者：evgo2017.com（</Run>
+                                <Run MouseEnter="GongZhongHao_MouseEnter"  MouseLeave="GongZhongHao_MouseLeave" TextDecorations="Underline" >公众号：随风前行</Run>
+                                <Run>）</Run>
+                            </TextBlock>
+                            <!-- 图片弹出层 -->
+                            <Popup x:Name="imagePopup" StaysOpen="True" Placement="Mouse">
+                                <Border Background="White" Padding="5" BorderThickness="1" BorderBrush="LightGray">
+                                    <Image x:Name="QrcodeForGHImage" Width="400"/>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="文件夹" Grid.Row="1" Margin="0,5,0,0">
+                    <StackPanel>
+                        <Grid Margin="5,5,5,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="来源："/>
+                            <TextBox Grid.Column="1" VerticalAlignment="Center" Padding="2" Text="{Binding FromRootFolderPath, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="2" HorizontalAlignment="Stretch" Margin="5,0,0,0" Padding="2" Content="选择" Click="BrowseFromFolder_Click"/>
+                            <Button Grid.Column="3" HorizontalAlignment="Stretch" Margin="5,0,0,0" Padding="2" Content="打开" Click="OpenFromFolder_Click"/>
+                        </Grid>
+                        <Grid Margin="5,2,5,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="目标："/>
+                            <TextBox Grid.Column="1" VerticalAlignment="Center" Padding="2" Text="{Binding ToRootFolderPath, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="2" HorizontalAlignment="Stretch" Margin="5,0,0,0" Padding="2"  Content="选择" Click="BrowseToFolder_Click"/>
+                            <Button Grid.Column="3" HorizontalAlignment="Stretch" Margin="5,0,0,0" Padding="2"  Content="打开" Click="OpenToFolder_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <UniformGrid Grid.Row="2" Rows="1"  Margin="0,5,0,0">
+                    <GroupBox Header="转换类型" Margin="0,0,2,0" Padding="5">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Content="Word" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" IsChecked="{Binding IsConvertWord, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox Content="PPT" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" IsChecked="{Binding IsConvertPPT, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox Content="Excel" MinWidth="0" VerticalContentAlignment="Center"  Margin="0,0,7,0" IsChecked="{Binding IsConvertExcel, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox Content="全选" MinWidth="0" VerticalContentAlignment="Center" IsChecked="{Binding IsConvertAll, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="子文件夹" Margin="2,0,0,0" Padding="5">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton Content="转换" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" GroupName="ConvertChildrenFolder" IsChecked="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}" />
+                                <RadioButton Content="不转换" MinWidth="0" VerticalContentAlignment="Center" GroupName="ConvertChildrenFolder" />
+                                <Rectangle Width="1" Height="20" Fill="Gray" Margin="10,2" />
+                                <RadioButton Content="结构" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" GroupName="KeepFolderStructure" IsChecked="{Binding IsKeepFolderStructure, UpdateSourceTrigger=PropertyChanged}" />
+                                <RadioButton Content="平铺" MinWidth="0" VerticalContentAlignment="Center" GroupName="KeepFolderStructure" />
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+                </UniformGrid>
+
+                <UniformGrid Grid.Row="3" Rows="1"  Margin="0,5,0,0">
+                    <GroupBox Header="Word 配置项" Margin="0,0,2,0" Padding="5">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox Content="打印注释" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" IsChecked="{Binding IsPrintRevisionsInWord, UpdateSourceTrigger=PropertyChanged}" />
+                           </StackPanel>
+                    </GroupBox>
+                    <GroupBox Header="Excel 配置项" Margin="2,0,0,0" Padding="5">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <CheckBox Content="一个Sheet一个PDF" MinWidth="0" VerticalContentAlignment="Center" Margin="0,0,7,0" IsChecked="{Binding IsConvertOneSheetOnePDFInExcel, UpdateSourceTrigger=PropertyChanged}" />
+                             </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+                </UniformGrid>
+                
+                <Button Grid.Row="4" IsEnabled="{Binding CanStartConvert}" Content="开始" VerticalAlignment="Top" Padding="8" Margin="0,5,0,0" Click="StartConvert_Click" HorizontalAlignment="Stretch"/>
+
+                <GroupBox Header="日志" Grid.Row="5" Margin="0,5,0,0" Padding="3">
+                    <RichTextBox x:Name="LogRichTextBox" IsReadOnly="True" VerticalScrollBarVisibility="Auto" Padding="2 9"/>
+                </GroupBox>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
