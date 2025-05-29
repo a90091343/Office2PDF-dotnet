@@ -1,5 +1,5 @@
 # Office2PDF-dotnet
-![office2pdf_v3](https://github.com/evgo2017/Office2PDF-dotnet/raw/master/assets/office2pdf_v3.png)
+![office2pdf_v3](./assets/office2pdf_v3.png)
 
 使用 .net 重新实现 [Office2PDF](https://github.com/evgo2017/Office2PDF) 版本。其它更新、更多信息在[软件主页](https://evgo2017.com/blog/office2pdf)查看。
 
