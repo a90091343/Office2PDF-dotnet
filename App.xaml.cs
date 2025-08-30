@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace Office2PDF
 {
@@ -10,5 +8,4 @@ namespace Office2PDF
     public partial class App : Application
     {
     }
-
 }

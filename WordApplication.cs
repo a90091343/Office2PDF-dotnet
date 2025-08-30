@@ -2,6 +2,7 @@ using Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Word;
 using Microsoft.Office.Interop.PowerPoint;
 using Microsoft.Office.Core;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -22,7 +23,7 @@ public interface IOfficeApplication : IDisposable
 public class WordApplication : IOfficeApplication
 {
     private Microsoft.Office.Interop.Word.Application _application;
-    private Document? _document;
+    private Document _document;
     public bool IsPrintRevisions { get; set; } = true;
 
     public WordApplication()
@@ -66,7 +67,7 @@ public class WordApplication : IOfficeApplication
 public class ExcelApplication : IOfficeApplication
 {
     private Microsoft.Office.Interop.Excel.Application _application;
-    private Workbook? _workbook;
+    private Workbook _workbook;
     public bool IsConvertOneSheetOnePDF { get; set; } = true;
 
     public ExcelApplication()
@@ -132,7 +133,7 @@ public class ExcelApplication : IOfficeApplication
 public class PowerPointApplication : IOfficeApplication
 {
     private Microsoft.Office.Interop.PowerPoint.Application _application;
-    private Presentation? _presentation;
+    private Presentation _presentation;
 
     public PowerPointApplication()
     {
@@ -146,7 +147,10 @@ public class PowerPointApplication : IOfficeApplication
 
     public void SaveAsPDF(string toFilePath)
     {
-        _presentation?.ExportAsFixedFormat(toFilePath, PpFixedFormatType.ppFixedFormatTypePDF);
+        if (_presentation != null)
+        {
+            _presentation.ExportAsFixedFormat(toFilePath, PpFixedFormatType.ppFixedFormatTypePDF);
+        }
     }
 
     public void CloseDocument()
