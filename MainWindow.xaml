@@ -18,62 +18,11 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <GroupBox Header="软件功能"
-                  Padding="5">
-            <StackPanel>
-                <TextBlock TextWrapping="Wrap">
-                        <Run>将 Word、Excel、PPT 批量转为 PDF 文件，支持 MS Office 和 WPS Office。</Run>
-                        <Run Foreground="#888888"
-                             FontSize="11"> v5.1.0</Run>
-                        <Run>  </Run>
-                        <Hyperlink x:Name="SoftwareHomepage"
-                                   Foreground="Blue"
-                                   TextDecorations="Underline"
-                                   Click="SoftwareHomepage_Click">
-                            <Run>软件主页</Run>
-                            <Hyperlink.ContextMenu>
-                                <ContextMenu x:Name="HomepageContextMenu"
-                                             Placement="MousePoint"
-                                             StaysOpen="False">
-                                    <MenuItem Header="当前项目主页 (作者: azhan)"
-                                              Click="Homepage_Current_Click"
-                                              Tag="https://github.com/a90091343/Office2PDF-dotnet"/>
-                                    <MenuItem Header="源项目1主页 (作者: evgo2017.com)"
-                                              Click="Homepage_Source1_Click"
-                                              Tag="https://evgo2017.com/blog/office2pdf"/>
-                                    <MenuItem Header="参考项目2主页 (作者: iOS-执著)"
-                                              Click="Homepage_Source2_Click"
-                                              Tag="https://gitee.com/BudStudio/WPSToPDF"/>
-                                </ContextMenu>
-                            </Hyperlink.ContextMenu>
-                        </Hyperlink>
-                </TextBlock>
-                <Grid Margin="0,5,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock HorizontalAlignment="Right"
-                               VerticalAlignment="Center"
-                               TextWrapping="Wrap">
-                                <Run>作者：</Run>
-                                <Hyperlink RequestNavigate="Hyperlink_RequestNavigate"
-                                           NavigateUri="https://evgo2017.com">evgo2017.com</Hyperlink>
-                                <Run>、</Run>
-                                <Hyperlink RequestNavigate="Hyperlink_RequestNavigate"
-                                           NavigateUri="http://weibo.com/lm3515">iOS-执著</Hyperlink>
-                                <Run> 和 azhan (powered by GitHub Copilot)</Run>
-                    </TextBlock>
-                </Grid>
-            </StackPanel>
-        </GroupBox>
-
         <GroupBox Header="文件夹"
-                  Grid.Row="1"
+                  Grid.Row="0"
                   Margin="0,5,0,0">
             <StackPanel>
                 <Grid Margin="5,5,5,2"
@@ -118,7 +67,7 @@
                     <TextBlock Grid.Column="1"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center"
-                               Text="请拖拽文件夹到此处"
+                               Text="请拖拽源文件夹到此处"
                                Foreground="Gray"
                                IsHitTestVisible="False">
                         <TextBlock.Style>
@@ -230,11 +179,66 @@
                             Content="打开"
                             Click="OpenToFolder_Click"/>
                 </Grid>
+
+                <!-- 子文件夹选项合并到这里 -->
+                <Rectangle Height="1"
+                           Fill="LightGray"
+                           Margin="5,3,5,3"/>
+                <StackPanel Orientation="Horizontal"
+                            Margin="5,0,5,0">
+                    <TextBlock Text="子文件夹："
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"/>
+                    <RadioButton Content="转换"
+                                 MinWidth="0"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,7,0"
+                                 GroupName="ConvertChildrenFolder"
+                                 IsChecked="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                    <RadioButton Content="不转换"
+                                 MinWidth="0"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,15,0"
+                                 GroupName="ConvertChildrenFolder"/>
+                    <!-- 竖线分隔符 -->
+                    <Rectangle Width="1"
+                               Height="20"
+                               Fill="Gray"
+                               Margin="10,2"/>
+                    <TextBlock Text="目录结构："
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"
+                               IsEnabled="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConvertChildrenFolder}"
+                                                 Value="False">
+                                        <Setter Property="Foreground"
+                                                Value="Gray"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <RadioButton Content="保持"
+                                 MinWidth="0"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,7,0"
+                                 GroupName="KeepFolderStructure"
+                                 IsChecked="{Binding IsKeepFolderStructure, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                    <RadioButton Content="平铺"
+                                 MinWidth="0"
+                                 VerticalContentAlignment="Center"
+                                 GroupName="KeepFolderStructure"
+                                 IsEnabled="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
             </StackPanel>
         </GroupBox>
 
-        <UniformGrid Grid.Row="2"
-                     Rows="1"
+        <UniformGrid Grid.Row="1"
+                     Columns="2"
                      Margin="0,5,0,0">
             <GroupBox Header="转换类型"
                       Margin="0,0,2,0"
@@ -270,8 +274,7 @@
                         <TextBlock Text="引擎："
                                    VerticalAlignment="Center"
                                    Margin="0,0,5,0"
-                                   FontSize="11"
-                                   Foreground="Gray"/>
+                                   FontSize="11"/>
                         <RadioButton Content="MS Office"
                                      MinWidth="0"
                                      VerticalContentAlignment="Center"
@@ -288,79 +291,10 @@
                     </StackPanel>
                 </StackPanel>
             </GroupBox>
-            <GroupBox Header="子文件夹"
+
+            <!-- 文件处理 -->
+            <GroupBox Header="文件处理"
                       Margin="2,0,0,0"
-                      Padding="5">
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <RadioButton Content="转换"
-                                     MinWidth="0"
-                                     VerticalContentAlignment="Center"
-                                     Margin="0,0,7,0"
-                                     GroupName="ConvertChildrenFolder"
-                                     IsChecked="{Binding IsConvertChildrenFolder, UpdateSourceTrigger=PropertyChanged}"/>
-                        <RadioButton Content="不转换"
-                                     MinWidth="0"
-                                     VerticalContentAlignment="Center"
-                                     GroupName="ConvertChildrenFolder"/>
-                        <Rectangle Width="1"
-                                   Height="20"
-                                   Fill="Gray"
-                                   Margin="10,2"/>
-                        <RadioButton Content="结构"
-                                     MinWidth="0"
-                                     VerticalContentAlignment="Center"
-                                     Margin="0,0,7,0"
-                                     GroupName="KeepFolderStructure"
-                                     IsChecked="{Binding IsKeepFolderStructure, UpdateSourceTrigger=PropertyChanged}"/>
-                        <RadioButton Content="平铺"
-                                     MinWidth="0"
-                                     VerticalContentAlignment="Center"
-                                     GroupName="KeepFolderStructure"/>
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-        </UniformGrid>
-
-        <UniformGrid Grid.Row="3"
-                     Columns="2"
-                     Margin="0,5,0,0">
-            <!-- 配置项 -->
-            <GroupBox Header="配置项"
-                      Margin="0,0,5,0"
-                      Padding="5">
-                <StackPanel>
-                    <!-- Word配置 -->
-                    <StackPanel Orientation="Horizontal"
-                                Margin="0,0,0,5">
-                        <TextBlock Text="Word："
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,5,0"
-                                   FontWeight="Bold"
-                                   MinWidth="50"/>
-                        <CheckBox Content="打印注释"
-                                  MinWidth="0"
-                                  VerticalContentAlignment="Center"
-                                  IsChecked="{Binding IsPrintRevisionsInWord, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <!-- Excel配置 -->
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Excel："
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,5,0"
-                                   FontWeight="Bold"
-                                   MinWidth="50"/>
-                        <CheckBox Content="一个Sheet一个PDF"
-                                  MinWidth="0"
-                                  VerticalContentAlignment="Center"
-                                  IsChecked="{Binding IsConvertOneSheetOnePDFInExcel, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </StackPanel>
-            </GroupBox>
-
-            <!-- 其他选项 -->
-            <GroupBox Header="其他选项"
-                      Margin="5,0,0,0"
                       Padding="5">
                 <StackPanel>
                     <CheckBox Content="删除原文件"
@@ -389,7 +323,40 @@
             </GroupBox>
         </UniformGrid>
 
-        <Grid Grid.Row="4"
+        <GroupBox Header="配置项"
+                  Grid.Row="2"
+                  Margin="0,5,0,0"
+                  Padding="5">
+            <StackPanel>
+                <!-- Word配置 -->
+                <StackPanel Orientation="Horizontal"
+                            Margin="0,0,0,5">
+                    <TextBlock Text="Word："
+                               VerticalAlignment="Center"
+                               Margin="0,0,5,0"
+                               FontWeight="Bold"
+                               MinWidth="50"/>
+                    <CheckBox Content="打印注释"
+                              MinWidth="0"
+                              VerticalContentAlignment="Center"
+                              IsChecked="{Binding IsPrintRevisionsInWord, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+                <!-- Excel配置 -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Excel："
+                               VerticalAlignment="Center"
+                               Margin="0,0,5,0"
+                               FontWeight="Bold"
+                               MinWidth="50"/>
+                    <CheckBox Content="一个Sheet一个PDF"
+                              MinWidth="0"
+                              VerticalContentAlignment="Center"
+                              IsChecked="{Binding IsConvertOneSheetOnePDFInExcel, UpdateSourceTrigger=PropertyChanged}"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+
+        <Grid Grid.Row="3"
               Margin="0,5,0,0">
 
             <Button IsEnabled="{Binding CanStartConvert}"
@@ -414,7 +381,7 @@
         </Grid>
 
         <GroupBox Header="日志"
-                  Grid.Row="5"
+                  Grid.Row="4"
                   Margin="0,5,0,0"
                   Padding="3">
             <RichTextBox x:Name="LogRichTextBox"
@@ -423,5 +390,36 @@
                          Padding="2 9"
                          MinHeight="150"/>
         </GroupBox>
+
+        <!-- 版本号和关于按钮 - 位于整个界面的右下角 -->
+        <Grid Grid.Row="4"
+              HorizontalAlignment="Right"
+              VerticalAlignment="Bottom"
+              Margin="0,0,10,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0"
+                       Text="v5.1.0"
+                       Foreground="#888888"
+                       FontSize="11"
+                       VerticalAlignment="Center"
+                       Margin="0,0,5,0"/>
+
+            <Button Grid.Column="1"
+                    x:Name="AboutButton"
+                    Content="关于"
+                    FontSize="11"
+                    Padding="8,2"
+                    MinWidth="0"
+                    MinHeight="0"
+                    Click="AboutButton_Click"
+                    Background="Transparent"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="1"
+                    Cursor="Hand"/>
+        </Grid>
     </Grid>
 </Window>

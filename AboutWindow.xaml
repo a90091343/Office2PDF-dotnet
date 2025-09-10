@@ -1,0 +1,72 @@
+<Window x:Class="Office2PDF.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="关于 Office2PDF 5"
+        Height="280"
+        Width="500"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Grid Margin="15">
+        <GroupBox Header="软件功能"
+                  Padding="10">
+            <StackPanel>
+                <TextBlock TextWrapping="Wrap"
+                           Margin="0,0,0,10">
+                        <Run>将 Word、Excel、PPT 批量转为 PDF 文件，支持 MS Office 和 WPS Office。</Run>
+                        <Run Foreground="#888888"
+                             FontSize="11"> v5.1.0</Run>
+                        <Run>  </Run>
+                        <Hyperlink x:Name="SoftwareHomepage"
+                                   Foreground="Blue"
+                                   TextDecorations="Underline"
+                                   Click="SoftwareHomepage_Click">
+                            <Run>软件主页</Run>
+                            <Hyperlink.ContextMenu>
+                                <ContextMenu x:Name="HomepageContextMenu"
+                                             Placement="MousePoint"
+                                             StaysOpen="False">
+                                    <MenuItem Header="当前项目主页 (作者: azhan)"
+                                              Click="Homepage_Current_Click"
+                                              Tag="https://github.com/a90091343/Office2PDF-dotnet"/>
+                                    <MenuItem Header="源项目1主页 (作者: evgo2017.com)"
+                                              Click="Homepage_Source1_Click"
+                                              Tag="https://evgo2017.com/blog/office2pdf"/>
+                                    <MenuItem Header="参考项目2主页 (作者: iOS-执著)"
+                                              Click="Homepage_Source2_Click"
+                                              Tag="https://gitee.com/BudStudio/WPSToPDF"/>
+                                </ContextMenu>
+                            </Hyperlink.ContextMenu>
+                        </Hyperlink>
+                </TextBlock>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap">
+                                <Run>作者：</Run>
+                                <Hyperlink RequestNavigate="Hyperlink_RequestNavigate"
+                                           NavigateUri="https://evgo2017.com">evgo2017.com</Hyperlink>
+                                <Run>、</Run>
+                                <Hyperlink RequestNavigate="Hyperlink_RequestNavigate"
+                                           NavigateUri="http://weibo.com/lm3515">iOS-执著</Hyperlink>
+                                <Run> 和 azhan (powered by GitHub Copilot)</Run>
+                    </TextBlock>
+                </Grid>
+
+                <Button Content="确定"
+                        Width="80"
+                        Height="30"
+                        Margin="0,15,0,0"
+                        HorizontalAlignment="Center"
+                        Click="OkButton_Click"/>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</Window>

@@ -897,6 +897,13 @@ namespace Office2PDF
             }
         }
 
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            var aboutWindow = new AboutWindow();
+            aboutWindow.Owner = this;
+            aboutWindow.ShowDialog();
+        }
+
         private void DuplicateFileActionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DuplicateFileActionCombo.SelectedItem is ComboBoxItem selectedItem)

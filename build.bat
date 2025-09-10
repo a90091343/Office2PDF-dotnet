@@ -240,7 +240,7 @@ if exist "bin\x64\Release" (
 )
 echo.
 echo [INFO] 编译完成时间: %date% %time%
-pause
+@REM pause
 exit /b 0
 
 :build_failed
