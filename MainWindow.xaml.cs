@@ -127,9 +127,6 @@ namespace Office2PDF
         {
             InitializeComponent();
 
-            // 设置DataContext以支持版本号绑定
-            this.DataContext = this;
-
             // 确保窗口大小不超出屏幕工作区域
             var workingArea = SystemParameters.WorkArea;
             if (this.Height > workingArea.Height * 0.9)
@@ -1688,6 +1685,16 @@ namespace Office2PDF
         {
             // 初始化时根据各个转换类型的状态更新"全选"状态
             UpdateIsConvertAll();
+        }
+
+        // 版本号属性，从Assembly中提取
+        public string VersionNumber
+        {
+            get
+            {
+                var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+            }
         }
 
         private string ProcessPath(string path)

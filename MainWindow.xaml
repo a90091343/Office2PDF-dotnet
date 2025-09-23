@@ -402,7 +402,7 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
-                       Text="v5.1.0"
+                       Text="{Binding VersionNumber, StringFormat='v{0}'}"
                        Foreground="#888888"
                        FontSize="11"
                        VerticalAlignment="Center"

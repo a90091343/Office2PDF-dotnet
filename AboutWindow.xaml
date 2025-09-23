@@ -17,8 +17,9 @@
                 <TextBlock TextWrapping="Wrap"
                            Margin="0,0,0,10">
                         <Run>将 Word、Excel、PPT 批量转为 PDF 文件，支持 MS Office 和 WPS Office。</Run>
-                        <Run Foreground="#888888"
-                             FontSize="11"> v5.1.0</Run>
+                        <Run x:Name="VersionRun"
+                             Foreground="#888888"
+                             FontSize="11"> v5.1.1</Run>
                         <Run>  </Run>
                         <Hyperlink x:Name="SoftwareHomepage"
                                    Foreground="Blue"

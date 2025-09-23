@@ -10,9 +10,22 @@ namespace Office2PDF
     /// </summary>
     public partial class AboutWindow : Window
     {
+        // 版本号属性，从Assembly中提取
+        public string VersionNumber
+        {
+            get
+            {
+                var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+                return $"{version.Major}.{version.Minor}.{version.Build}";
+            }
+        }
+
         public AboutWindow()
         {
             InitializeComponent();
+
+            // 动态设置版本号
+            VersionRun.Text = $" v{VersionNumber}";
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
