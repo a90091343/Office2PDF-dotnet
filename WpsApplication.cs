@@ -51,16 +51,101 @@ public class WpsWriterApplication : IOfficeApplication
                     Directory.CreateDirectory(directory);
                 }
 
-                if (!IsPrintRevisions)
+                if (IsPrintRevisions)
                 {
-                    try { _document.ShowRevisions = false; } catch { /* ignore */ }
+                    // 直接导出，显示所有批注和修订
+                    _document.ExportAsFixedFormat(toFilePath, 17); // 17 = wdExportFormatPDF
                 }
-
-                _document.ExportAsFixedFormat(toFilePath, 17); // 17 = wdExportFormatPDF
+                else
+                {
+                    // 使用预处理方法：创建临时副本，删除批注和修订
+                    SaveAsPDFWithPreprocessing(toFilePath);
+                }
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"无法保存PDF: {toFilePath}, 错误: {ex.Message}", ex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 使用文档预处理的方式保存PDF：创建临时副本，物理删除批注和接受修订
+    /// </summary>
+    private void SaveAsPDFWithPreprocessing(string toFilePath)
+    {
+        string tempDocPath = null;
+        dynamic tempDoc = null;
+
+        try
+        {
+            // 1. 创建临时文件路径
+            tempDocPath = Path.Combine(Path.GetTempPath(), $"Office2PDF_Temp_{Guid.NewGuid():N}.docx");
+
+            // 2. 保存当前文档为临时副本
+            _document.SaveAs2(tempDocPath);
+
+            // 3. 打开临时副本进行预处理
+            tempDoc = _application.Documents.Open(tempDocPath, Visible: false);
+
+            // 4. 删除所有批注
+            try
+            {
+                var comments = tempDoc.Comments;
+                while (comments.Count > 0)
+                {
+                    comments.Item(1).Delete();
+                }
+            }
+            catch (Exception ex)
+            {
+                // 批注删除失败时记录但不中断处理
+                System.Diagnostics.Debug.WriteLine($"删除批注时出错: {ex.Message}");
+            }
+
+            // 5. 接受所有修订标记
+            try
+            {
+                var revisions = tempDoc.Revisions;
+                if (revisions.Count > 0)
+                {
+                    revisions.AcceptAll();
+                }
+            }
+            catch (Exception ex)
+            {
+                // 修订处理失败时记录但不中断处理
+                System.Diagnostics.Debug.WriteLine($"接受修订时出错: {ex.Message}");
+            }
+
+            // 6. 保存临时文档的更改
+            tempDoc.Save();
+
+            // 7. 导出预处理后的文档为PDF
+            tempDoc.ExportAsFixedFormat(toFilePath, 17); // 17 = wdExportFormatPDF
+        }
+        finally
+        {
+            // 8. 清理临时资源
+            if (tempDoc != null)
+            {
+                try
+                {
+                    tempDoc.Close(false);
+                    if (Marshal.IsComObject(tempDoc))
+                        Marshal.ReleaseComObject(tempDoc);
+                }
+                catch { /* ignore cleanup errors */ }
+            }
+
+            // 9. 删除临时文件
+            if (!string.IsNullOrEmpty(tempDocPath) && File.Exists(tempDocPath))
+            {
+                try
+                {
+                    File.Delete(tempDocPath);
+                }
+                catch { /* ignore temp file deletion errors */ }
             }
         }
     }

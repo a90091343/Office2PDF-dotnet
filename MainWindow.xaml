@@ -336,7 +336,7 @@
                                Margin="0,0,5,0"
                                FontWeight="Bold"
                                MinWidth="50"/>
-                    <CheckBox Content="打印注释"
+                    <CheckBox Content="打印注释与修订标记"
                               MinWidth="0"
                               VerticalContentAlignment="Center"
                               IsChecked="{Binding IsPrintRevisionsInWord, UpdateSourceTrigger=PropertyChanged}"/>

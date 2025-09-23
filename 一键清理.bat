@@ -43,4 +43,20 @@ for %%f in (*.log) do (
     )
 )
 
+REM 删除转换测试文件夹
+if exist "test_PDFs" (
+    echo 删除 test_PDFs 目录...
+    rmdir /s /q "test_PDFs" 2>nul
+)
+
+REM 先删除目录下的所有空文件，再递归删除空文件夹（顺序不可颠倒，以免误删）
+for /f "delims=" %%f in ('dir /a-d/b/s') do (
+    if %%~zf==0 (
+        del "%%f" 2>nul
+    )
+)
+for /f "delims=" %%d in ('dir /ad/b/s') do (
+    rd "%%d" 2>nul
+)
+
 echo 清理完成！

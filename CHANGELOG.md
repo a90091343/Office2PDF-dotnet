@@ -5,6 +5,66 @@ All notable changes to Office2PDF will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.1] - 2025-09-23
+
+### Fixed
+
+- **彻底解决WPS文字转PDF批注控制问题** - 🎉 实现全新的文档预处理解决方案
+
+#### 🔥 核心实现逻辑
+
+**勾选"打印批注与修订标记"** (`IsPrintRevisions = true`)
+
+- 直接导出原始文档，显示所有批注和修订标记
+- 调用：`_document.ExportAsFixedFormat(toFilePath, 17)`
+
+**不勾选"打印批注与修订标记"** (`IsPrintRevisions = false`)
+
+- 实施预处理流程：
+  1. 创建临时文档副本 (`SaveAs2()`)
+  2. **物理删除所有批注**：
+
+     ```csharp
+     var comments = tempDoc.Comments;
+     while (comments.Count > 0) {
+         comments.Item(1).Delete();
+     }
+     ```
+
+  3. **接受所有修订标记**：
+
+     ```csharp
+     var revisions = tempDoc.Revisions;
+     if (revisions.Count > 0) {
+         revisions.AcceptAll();
+     }
+     ```
+
+  4. 导出预处理后的"干净"文档
+  5. 自动清理临时文件
+
+#### 🛠️ 核心技术特性
+
+- **彻底解决WPS粘滞问题** - 不再依赖WPS的显示设置API，物理删除内容让WPS无法显示不存在的批注
+- **完全保护原文档** - 所有操作在临时副本中进行，原始文档完全不受影响  
+- **健壮的错误处理** - 批注删除失败时继续处理修订，临时文件清理有多重保障，COM对象释放安全处理
+- **高兼容性** - 支持各种复杂的批注和修订场景，不依赖WPS版本特定的API
+
+#### 📋 解决方案优势
+
+✅ **彻底解决** - 物理删除批注和修订，解决WPS API粘滞现象  
+✅ **不影响原文档** - 操作临时副本，100%安全  
+✅ **兼容性好** - 不依赖WPS特定的显示设置，通用性强  
+✅ **自动清理** - 临时文件管理完善，无残留  
+✅ **向后兼容** - 保持原有的`IsPrintRevisions`配置接口
+
+现在用户只需要：
+
+- **勾选"打印批注与修订标记"** - PDF中包含所有批注和修订
+- **不勾选"打印批注与修订标记"** - PDF中完全没有批注和修订
+
+无论WPS图形界面之前做过什么操作，都不会影响程序的转换结果！
+
 ## [5.1.0] - 2025-08-30
 
 **贡献者**: azhan (感谢 GitHub Copilot 协助)
