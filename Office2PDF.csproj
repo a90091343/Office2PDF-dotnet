@@ -83,6 +83,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NetworkPathHelper.cs" />
     <Compile Include="OfficeApplication.cs" />
     <Compile Include="WpsApplication.cs" />
     <Compile Include="MainWindowViewModel.cs" />

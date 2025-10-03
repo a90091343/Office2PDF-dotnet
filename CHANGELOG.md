@@ -32,12 +32,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 新增 `ConversionEngine.cs` - 独立的转换引擎类（1689行），负责所有PDF转换业务逻辑
   - 新增 `MainWindowViewModel.cs` - MVVM模式的视图模型类（372行），管理UI状态和数据绑定
   - 新增 `OfficeApplication.cs` - 统一的Office引擎接口和工具类（699行）
+  - 新增 `NetworkPathHelper.cs` - 网络路径处理工具类和装饰器（353行）
   - 删除 `WordApplication.cs` - 功能整合到新架构中
   - `MainWindow.xaml.cs` 从1608行精简到657行（减少60%），仅负责UI交互
   - 职责分离清晰：UI层、业务逻辑层、数据访问层独立
   - 提升代码可测试性和可扩展性
 
-- **� 引擎选择帮助** - 新增引擎选择区域的"?"帮助按钮
+- **🌐 网络路径处理重构** - 使用装饰器模式重构网络路径处理逻辑
+  - 创建 `NetworkPathHandlingDecorator` 装饰器类，透明处理所有网络路径操作
+  - 采用**目录级映射策略**（而非文件级），完美支持 Excel 多 sheet 输出场景
+  - 从所有 6 个应用类中移除网络路径处理代码，**消除 200+ 行重复代码**
+  - 所有应用类（MSWord, MSExcel, MSPPT, WpsWriter, WpsSheet, WpsPPT）完全不知道网络路径的存在
+  - 修复 MSWordApplication 输出网络路径缺失的问题
+  - 修复 WpsWriterApplication 完全缺失网络路径支持的问题
+  - 在 ConversionEngine 中统一包装装饰器，对所有应用类自动生效
+  - 符合**单一职责原则**和**开闭原则**，代码更优雅、易维护
+
+- **💡 引擎选择帮助** - 新增引擎选择区域的"?"帮助按钮
   - 弹出式帮助面板解释自动选择、MS Office、WPS三种引擎模式
   - 详细说明自动选择模式的工作原理和回退机制
   - 提示WPS模式可避免MS Office进程残留问题

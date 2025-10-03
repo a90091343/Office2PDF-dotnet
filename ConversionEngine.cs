@@ -493,11 +493,11 @@ namespace Office2PDF
         }
 
         /// <summary>
-        /// 创建Office应用程序实例
+        /// 创建Office应用程序实例，并使用 NetworkPathHandlingDecorator 包装以支持网络路径
         /// </summary>
         private IOfficeApplication CreateApplication<T>() where T : IOfficeApplication, new()
         {
-            IOfficeApplication application;
+            IOfficeApplication innerApplication;
 
             if (!_engineInfoLoggedFor.ContainsKey(typeof(T)))
             {
@@ -510,23 +510,24 @@ namespace Office2PDF
                         Log(msg);
                 };
 
-                if (typeof(T) == typeof(MSWordApplication)) { application = new MSWordApplication(logCallback); }
-                else if (typeof(T) == typeof(MSExcelApplication)) { application = new MSExcelApplication(logCallback); }
-                else if (typeof(T) == typeof(MSPowerPointApplication)) { application = new MSPowerPointApplication(logCallback); }
-                else { application = new T(); }
+                if (typeof(T) == typeof(MSWordApplication)) { innerApplication = new MSWordApplication(logCallback); }
+                else if (typeof(T) == typeof(MSExcelApplication)) { innerApplication = new MSExcelApplication(logCallback); }
+                else if (typeof(T) == typeof(MSPowerPointApplication)) { innerApplication = new MSPowerPointApplication(logCallback); }
+                else { innerApplication = new T(); }
 
                 _engineInfoLoggedFor.TryAdd(typeof(T), 0);
             }
             else
             {
                 // 非第一次创建，使用不带日志回调的构造函数
-                if (typeof(T) == typeof(MSWordApplication)) { application = new MSWordApplication(); }
-                else if (typeof(T) == typeof(MSExcelApplication)) { application = new MSExcelApplication(); }
-                else if (typeof(T) == typeof(MSPowerPointApplication)) { application = new MSPowerPointApplication(); }
-                else { application = new T(); }
+                if (typeof(T) == typeof(MSWordApplication)) { innerApplication = new MSWordApplication(); }
+                else if (typeof(T) == typeof(MSExcelApplication)) { innerApplication = new MSExcelApplication(); }
+                else if (typeof(T) == typeof(MSPowerPointApplication)) { innerApplication = new MSPowerPointApplication(); }
+                else { innerApplication = new T(); }
             }
 
-            return application;
+            // 使用 NetworkPathHandlingDecorator 包装，自动支持网络路径处理
+            return new NetworkPathHandlingDecorator(innerApplication);
         }
 
         /// <summary>
@@ -534,19 +535,24 @@ namespace Office2PDF
         /// </summary>
         private void ConfigureApplicationProperties(IOfficeApplication application)
         {
-            if (application is MSWordApplication wordApp)
+            // 如果应用被 NetworkPathHandlingDecorator 包装，获取内部应用
+            var actualApp = application is NetworkPathHandlingDecorator decorator
+                ? decorator.InnerApplication
+                : application;
+
+            if (actualApp is MSWordApplication wordApp)
             {
                 wordApp.IsPrintRevisions = _viewModel.IsPrintRevisionsInWord;
             }
-            else if (application is WpsWriterApplication wpsWordApp)
+            else if (actualApp is WpsWriterApplication wpsWordApp)
             {
                 wpsWordApp.IsPrintRevisions = _viewModel.IsPrintRevisionsInWord;
             }
-            else if (application is MSExcelApplication excelApp)
+            else if (actualApp is MSExcelApplication excelApp)
             {
                 excelApp.IsConvertOneSheetOnePDF = _viewModel.IsConvertOneSheetOnePDFInExcel;
             }
-            else if (application is WpsSpreadsheetApplication wpsExcelApp)
+            else if (actualApp is WpsSpreadsheetApplication wpsExcelApp)
             {
                 wpsExcelApp.IsConvertOneSheetOnePDF = _viewModel.IsConvertOneSheetOnePDFInExcel;
             }
