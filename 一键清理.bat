@@ -1,6 +1,26 @@
 @echo off
 setlocal enabledelayedexpansion
-cd /d "%~dp0"
+
+REM 检查是否在 UNC 网络路径下
+set "SCRIPT_DIR=%~dp0"
+echo 脚本目录: %SCRIPT_DIR%
+
+REM 尝试切换到脚本所在目录
+REM 如果是 UNC 路径，cd /d 会失败，但我们可以使用 pushd 来映射临时驱动器
+if "%SCRIPT_DIR:~0,2%"=="\\" (
+    echo 检测到 UNC 网络路径，正在映射临时驱动器...
+    pushd "%SCRIPT_DIR%" || (
+        echo 错误: 无法访问 UNC 路径，请检查网络连接
+        pause
+        exit /b 1
+    )
+) else (
+    cd /d "%SCRIPT_DIR%" || (
+        echo 错误: 无法切换到脚本目录
+        pause
+        exit /b 1
+    )
+)
 
 echo 正在清理构建文件...
 
@@ -60,3 +80,9 @@ for /f "delims=" %%d in ('dir /ad/b/s') do (
 )
 
 echo 清理完成！
+
+REM 如果是 UNC 路径，需要使用 popd 来清理临时映射
+if "%SCRIPT_DIR:~0,2%"=="\\" (
+    popd
+)
+

@@ -1,6 +1,26 @@
 @echo off
 setlocal enabledelayedexpansion
-cd /d "%~dp0"
+
+REM 检查是否在 UNC 网络路径下
+set "SCRIPT_DIR=%~dp0"
+echo [INFO] 脚本目录: %SCRIPT_DIR%
+
+REM 尝试切换到脚本所在目录
+REM 如果是 UNC 路径，cd /d 会失败，但我们可以使用 pushd 来映射临时驱动器
+if "%SCRIPT_DIR:~0,2%"=="\\" (
+    echo [INFO] 检测到 UNC 网络路径，正在映射临时驱动器...
+    pushd "%SCRIPT_DIR%" || (
+        echo [ERROR] 无法访问 UNC 路径，请检查网络连接
+        pause
+        exit /b 1
+    )
+) else (
+    cd /d "%SCRIPT_DIR%" || (
+        echo [ERROR] 无法切换到脚本目录
+        pause
+        exit /b 1
+    )
+)
 
 echo =========================================
 echo        Office2PDF Build Script
@@ -11,6 +31,7 @@ REM 检查解决方案文件是否存在
 if not exist "Office2PDF.sln" (
     echo [ERROR] 未找到 Office2PDF.sln 文件
     echo [ERROR] 请确保在项目根目录运行此脚本
+    if "%SCRIPT_DIR:~0,2%"=="\\" popd
     pause
     exit /b 1
 )
@@ -204,6 +225,7 @@ if errorlevel 1 (
     echo [HELP] 下载链接:
     echo [HELP] Visual Studio: https://visualstudio.microsoft.com/
     echo [HELP] .NET SDK: https://dotnet.microsoft.com/download
+    if "%SCRIPT_DIR:~0,2%"=="\\" popd
     goto build_failed
 )
 
@@ -240,6 +262,12 @@ if exist "bin\x64\Release" (
 )
 echo.
 echo [INFO] 编译完成时间: %date% %time%
+
+REM 如果是 UNC 路径，需要使用 popd 来清理临时映射
+if "%SCRIPT_DIR:~0,2%"=="\\" (
+    popd
+)
+
 @REM pause
 exit /b 0
 
@@ -255,6 +283,12 @@ echo [TROUBLESHOOT] 2. 确保项目文件没有损坏
 echo [TROUBLESHOOT] 3. 检查是否缺少依赖项
 echo [TROUBLESHOOT] 4. 尝试在 Visual Studio 中手动编译
 echo.
+
+REM 如果是 UNC 路径，需要使用 popd 来清理临时映射
+if "%SCRIPT_DIR:~0,2%"=="\\" (
+    popd
+)
+
 pause
 exit /b 1
 
