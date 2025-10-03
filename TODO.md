@@ -44,9 +44,33 @@
 
 ---
 
-## 已知问题
+## 已知问题 / Bug修复
 
-- [ ] 待补充
+### 网络路径支持不完整
+
+- [ ] **MSWordApplication（自动引擎-Word）缺少输出网络路径处理**
+  - 问题：`SaveAsPDF` 方法只处理了输入网络路径，但没有处理输出到网络路径的情况
+  - 影响：当输出目标是网络路径时（如 `\\server\share\output.pdf`），可能会因为网络延迟或权限问题导致转换失败
+  - 解决方案：参考 MSExcelApplication 的实现，在 SaveAsPDF 中添加：
+    ```csharp
+    bool isNetworkOutput = NetworkPathHelper.IsNetworkPath(toFilePath);
+    string actualOutputPath = isNetworkOutput ? NetworkPathHelper.CreateLocalTempOutputPath(toFilePath) : toFilePath;
+    // ... 转换到本地临时路径 ...
+    if (isNetworkOutput) {
+        NetworkPathHelper.CopyToNetworkPath(actualOutputPath, toFilePath);
+        NetworkPathHelper.CleanupTempFile(actualOutputPath);
+    }
+    ```
+
+- [ ] **WpsWriterApplication（WPS文字引擎）完全没有网络路径处理**
+  - 问题：无论输入还是输出都没有网络路径支持
+  - 影响：
+    - 输入网络路径时，WPS 可能无法直接打开文件或响应缓慢
+    - 输出网络路径时，保存可能失败或耗时过长
+  - 解决方案：参考 WpsSpreadsheetApplication 的完整实现
+    - OpenDocument: 检查并创建本地临时副本
+    - SaveAsPDF: 先输出到本地，再复制到网络路径
+    - Dispose: 清理临时文件
 
 ---
 
