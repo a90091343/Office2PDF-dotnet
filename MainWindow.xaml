@@ -271,18 +271,97 @@
                                Margin="0,2"/>
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,5,0,0">
+                        <Button Background="#E6F3FF"
+                                BorderBrush="#4A90E2"
+                                BorderThickness="1"
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,5,0"
+                                VerticalAlignment="Center"
+                                Cursor="Help"
+                                Click="HelpButton_Click"
+                                Name="EngineHelpButton">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="10">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <TextBlock Text="?"
+                                       FontFamily="Segoe UI"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#4A90E2"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Button>
                         <TextBlock Text="引擎："
                                    VerticalAlignment="Center"
                                    Margin="0,0,5,0"
                                    FontSize="11"/>
-                        <RadioButton Content="MS Office"
-                                     MinWidth="0"
-                                     VerticalContentAlignment="Center"
-                                     Margin="0,0,10,0"
-                                     GroupName="OfficeEngine"
-                                     IsChecked="{Binding UseWpsOffice, Converter={x:Static local:InverseBooleanConverter.Instance}, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="11"/>
-                        <RadioButton Content="WPS Office"
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="自动（推荐）"
+                                         MinWidth="0"
+                                         VerticalContentAlignment="Center"
+                                         Margin="0,0,10,0"
+                                         GroupName="OfficeEngine"
+                                         IsChecked="{Binding UseWpsOffice, Converter={x:Static local:InverseBooleanConverter.Instance}, UpdateSourceTrigger=PropertyChanged}"
+                                         FontSize="11"/>
+                            <Popup Name="EngineHelpPopup"
+                                   PlacementTarget="{Binding ElementName=EngineHelpButton}"
+                                   Placement="Bottom"
+                                   StaysOpen="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="#F8F9FA"
+                                        BorderBrush="#4A90E2"
+                                        BorderThickness="1"
+                                        CornerRadius="5"
+                                        MaxWidth="350">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="Gray"
+                                                          BlurRadius="10"
+                                                          ShadowDepth="3"
+                                                          Opacity="0.3"/>
+                                    </Border.Effect>
+                                    <StackPanel Margin="12">
+                                        <TextBlock Text="Office 引擎选择"
+                                                   FontWeight="Bold"
+                                                   FontSize="12"
+                                                   Foreground="#2C3E50"
+                                                   Margin="0,0,0,8"/>
+                                        <TextBlock TextWrapping="Wrap"
+                                                   FontSize="11"
+                                                   Foreground="#34495E"
+                                                   LineHeight="18">
+                                            <Run Text="▸ 自动"
+                                                    FontWeight="Bold"/><LineBreak/>
+                                            <Run Text="  • 若只安装了 MS Office，则使用 MS Office 引擎"/><LineBreak/>
+                                            <Run Text="  • 若只安装了 WPS Office，则使用 WPS Office 引擎"/><LineBreak/>
+                                            <Run Text="  • 若同时安装了两者，则使用在系统注册表HKCU中注册的引擎"/><LineBreak/><LineBreak/>
+                                            <Run Text="  💡 "
+                                                    FontWeight="Bold"/>
+                                            <Run Text="提示：当 MS Office 与 WPS Office 共存时，若用户安装 WPS 时勾选了“修改相关系统配置使 WPS 兼容第三方系统和软件”，那么 COM 自动化接口会被 WPS 接管，程序会自动检测并提示。"
+                                                    FontStyle="Italic"
+                                                    Foreground="#7F8C8D"/><LineBreak/><LineBreak/>
+                                            <Run Text="▸ WPS"
+                                                    FontWeight="Bold"/><LineBreak/>
+                                            <Run Text="  强制使用 WPS Office 引擎进行转换。"/><LineBreak/><LineBreak/>
+                                            <Run Text="  ⚠️ "
+                                                    FontWeight="Bold"/>
+                                            <Run Text="注意：使用此引擎进行批量转换后，系统后台可能会残留数个wps.exe进程。若重复操作，残留的进程会不断累积。"
+                                                    FontStyle="Italic"
+                                                    Foreground="#7F8C8D"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
+                        </StackPanel>
+                        <RadioButton Content="WPS"
                                      MinWidth="0"
                                      VerticalContentAlignment="Center"
                                      GroupName="OfficeEngine"
@@ -300,7 +379,8 @@
                     <CheckBox Content="删除原文件"
                               MinWidth="0"
                               VerticalContentAlignment="Center"
-                              IsChecked="{Binding IsDeleteOriginalFiles, UpdateSourceTrigger=PropertyChanged}"/>
+                              IsChecked="{Binding IsDeleteOriginalFiles, UpdateSourceTrigger=PropertyChanged}"
+                              HorizontalAlignment="Left"/>
 
                     <StackPanel Orientation="Horizontal"
                                 Margin="0,5,0,0">
@@ -336,7 +416,7 @@
                                Margin="0,0,5,0"
                                FontWeight="Bold"
                                MinWidth="50"/>
-                    <CheckBox Content="打印注释与修订标记"
+                    <CheckBox Content="打印批注与修订标记"
                               MinWidth="0"
                               VerticalContentAlignment="Center"
                               IsChecked="{Binding IsPrintRevisionsInWord, UpdateSourceTrigger=PropertyChanged}"/>
@@ -395,7 +475,7 @@
         <Grid Grid.Row="4"
               HorizontalAlignment="Right"
               VerticalAlignment="Bottom"
-              Margin="0,0,10,10">
+              Margin="0,0,30,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -423,3 +503,6 @@
         </Grid>
     </Grid>
 </Window>
+
+
+

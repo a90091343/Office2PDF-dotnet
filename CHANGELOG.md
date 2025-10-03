@@ -5,9 +5,97 @@ All notable changes to Office2PDF will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.5] - 2025-10-03
+
+### 新增功能
+
+- **🌐 网络路径支持** - 完整支持UNC网络路径（`\\server\share`格式）的文件转换
+  - 自动检测并处理网络路径文件
+  - 使用临时本地副本进行转换，确保COM组件兼容性
+  - 支持网络路径输入和输出
+  - 自动清理临时文件，无残留
+  - 适用于Word、Excel、PPT的MS Office和WPS引擎
+
+- **🎯 拖拽文件夹到EXE启动** - 支持将文件夹拖拽到程序图标上快速启动
+  - 自动填充来源文件夹路径
+  - 自动生成目标文件夹路径（`来源路径_PDFs`）
+  - 提升批量转换工作流效率
+
+- **📊 WPS Excel隐藏工作表跳过** - WPS引擎转换Excel时自动跳过隐藏的Sheet
+  - 避免转换用户不需要的隐藏内容
+  - 减少不必要的PDF文件生成
+  - 提升转换效率
+
+### 改进优化
+
+- **🏗️ 重大架构重构** - 代码结构优化，提升可维护性
+  - 新增 `ConversionEngine.cs` - 独立的转换引擎类（1689行），负责所有PDF转换业务逻辑
+  - 新增 `MainWindowViewModel.cs` - MVVM模式的视图模型类（372行），管理UI状态和数据绑定
+  - 新增 `OfficeApplication.cs` - 统一的Office引擎接口和工具类（699行）
+  - 删除 `WordApplication.cs` - 功能整合到新架构中
+  - `MainWindow.xaml.cs` 从1608行精简到657行（减少60%），仅负责UI交互
+  - 职责分离清晰：UI层、业务逻辑层、数据访问层独立
+  - 提升代码可测试性和可扩展性
+
+- **� 引擎选择帮助** - 新增引擎选择区域的"?"帮助按钮
+  - 弹出式帮助面板解释自动选择、MS Office、WPS三种引擎模式
+  - 详细说明自动选择模式的工作原理和回退机制
+  - 提示WPS模式可避免MS Office进程残留问题
+  - 提升用户理解，减少配置困惑
+
+- **🎨 UI细节优化** - 改善界面交互体验
+  - 引擎选择区域文案从"MS Office"改为"自动选择"
+  - 引擎选择区域文案从"WPS Office"简化为"WPS"
+  - Word批注选项文案从"打印注释"改为"打印批注与修订标记"（更准确）
+  - 删除原文件选项调整为左对齐
+  - 关于按钮右侧边距调整（从10调整到30）
+
+- **�📝 WPS批注处理增强** - 批注删除失败时输出友好警告信息
+  - 明确提示用户PDF可能保留批注
+  - 不再是静默处理，提升透明度
+  - 帮助用户理解转换结果
+
+- **🛠️ COM清理规范** - 所有COM对象释放异常处理标准化
+  - 添加明确注释：`/* COM清理失败不影响程序继续 */`
+  - 提升代码可读性和维护性
+
+- **🔧 开发环境升级** - 项目配置现代化
+  - ToolsVersion升级到 `Current`（从15.0）
+  - TargetFramework降级到 .NET 4.7（提升兼容性，从.NET 4.8）
+  - App.config同步更新运行时配置
+
+### 问题修复
+
+- **🐛 Excel网络路径兼容性** - 解决Excel COM组件无法直接处理UNC网络路径的问题
+  - 临时本地副本方案确保稳定性
+  - 自动复制到最终网络位置
+  - 避免"文件未找到"或"路径无效"错误
+
+- **🐛 多文件冲突智能识别** - 修复同名但不同扩展名文件的转换冲突
+  - 例如：`1.doc` 和 `1.ppt` 同时存在时
+  - 自动保留完整扩展名：`1.doc.pdf`、`1.ppt.pdf`
+  - 输出友好警告信息，提示文件名冲突数量
+
+### 技术细节
+
+**网络路径处理机制：**
+
+- 使用MD5哈希生成唯一临时文件名，避免冲突
+- 临时文件存储在 `%TEMP%\Office2PDF_NetworkTemp\` 目录
+- 转换完成后自动复制到网络位置并清理临时文件
+- 程序退出时清理所有残留临时文件
+
+**架构优化：**
+
+- **MVVM模式**：清晰的视图-视图模型-模型分离
+- **单一职责**：每个类专注于特定功能
+- **依赖注入**：通过构造函数注入依赖，便于测试
+- **线程安全**：使用ConcurrentDictionary管理状态
+- **取消令牌**：支持异步操作的优雅取消
+
 ## [5.1.1] - 2025-09-23
 
-### Fixed
+### 问题修复
 
 - **彻底解决WPS文字转PDF批注控制问题** - 🎉 实现全新的文档预处理解决方案
 
@@ -69,7 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **贡献者**: azhan (感谢 GitHub Copilot 协助)
 
-### Added
+### 新增功能
 
 - **转换结果汇总功能** - 显示总文件数、成功数、失败数的详细统计
 - **失败文件列表** - 完整列出所有转换失败的文件路径，便于问题定位
@@ -80,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **自动目标生成** - 设置来源路径时自动生成目标路径（`来源路径_PDFs`）
 - **增强路径验证** - 改进目标路径验证逻辑，支持无效路径的早期检测和友好提示
 
-### Fixed
+### 问题修复
 
 - **文件计数修复** - 转换进度显示从第1个文件开始计数，符合人类习惯（之前从0开始）
 - **目标路径同步** - 修复拖拽更换来源文件夹时目标路径不自动更新的问题
@@ -90,14 +178,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **构建配置优化** - 移除冗余的TargetFrameworkVersion参数，使用项目文件配置
 - **编译警告清理** - 清理未使用变量和调试代码
 
-### Improved
+### 改进优化
 
 - **用户体验** - 更清晰的转换结果反馈，包含emoji图标增强可读性
 - **路径处理** - 自动去除复制路径中的引号，提升粘贴体验
 - **自动路径生成** - 设置来源路径时自动生成目标路径（`来源路径_PDFs`）
 - **按钮样式** - 优化"开始"按钮的大小和字体，提升视觉效果
 - **错误处理** - 更详细的编译错误提示和故障排除建议
-### Improved
+
+### 界面优化
 
 - **UI布局优化** - 重新设计按钮布局，开始按钮居中且更宽，撤回按钮右对齐
 - **视觉效果增强** - 优化开始按钮字体大小和粗细，提升视觉效果  
@@ -110,7 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **贡献者**: azhan (感谢 GitHub Copilot 协助)  
 **WPS 转换思路来源**: iOS-执著 ([WPSToPDF](https://gitee.com/BudStudio/WPSToPDF))
 
-### Added
+### 新增功能
 
 - **WPS Office 引擎支持** - 完整支持 WPS 文字、WPS 表格、WPS 演示的批量转换
 - **双引擎切换** - 新增"引擎"单选项（MS Office / WPS Office），默认选择 WPS
@@ -120,7 +209,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **转换控制** - 转换按钮支持"开始/结束"切换，实现任务取消功能
 - **环境检测增强** - WPS 环境检测使用正确 ProgID（KWps/KET/KWPP），避免误判
 
-### Improved
+### 改进优化
 
 - **界面优化** - 默认取消勾选 Excel，避免误触大批量表格转换
 - **窗口布局** - 压缩窗口高度与布局，移除底部多余空白，界面更紧凑
@@ -128,7 +217,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **拖拽体验** - 拖拽区域提示文案清晰化，空路径时灰底提示
 - **作者信息** - 更新作者信息，移除旧二维码弹出层，界面更简洁
 
-### Fixed
+### 问题修复
 
 - **COM 对象管理** - 全面梳理 MS Office 与 WPS 的 COM 生命周期管理
 - **资源释放** - 文档/工作簿/演示文稿/Sheet 均显式关闭与释放
@@ -136,7 +225,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **取消操作** - 安全的取消操作状态回收（按钮文字、令牌释放、列表清理）
 - **删除重试** - 删除原文件逻辑包含渐进重试（属性重置、GC、进程清理）
 
-### Technical
+### 技术实现
 
 - **接口抽象** - 抽象 IOfficeApplication 接口 + 泛型 ConvertToPDF 方法
 - **代码复用** - 统一三套文档类型的实现逻辑
@@ -148,7 +237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **贡献者**: evgo2017
 
-### Added
+### 新增功能
 
 - 基于 .NET Framework 重构的全新版本
 - 图形用户界面 (GUI)
@@ -156,7 +245,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 子文件夹递归处理
 - 文件类型选择（Word/Excel/PPT）
 
-### Technical
+### 技术实现
 
 - 使用 WPF 框架构建用户界面
 - COM 组件交互处理 Office 文档
@@ -166,7 +255,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **贡献者**: evgo2017
 
-### Added
+### 新增功能
 
 - GUI 界面
 - 文件类型选择功能
@@ -176,7 +265,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **贡献者**: evgo2017
 
-### Added
+### 新增功能
 
 - 基础的 Office 文档转 PDF 功能
 - 命令行界面

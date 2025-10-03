@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
 
 // WPS Office COM Interop类
 // WPS Writer (Word)
@@ -8,6 +10,7 @@ public class WpsWriterApplication : IOfficeApplication
 {
     private dynamic _application;
     private dynamic _document;
+    private Action<string> _logAction; // 用于输出日志的委托
     public bool IsPrintRevisions { get; set; } = true;
 
     public WpsWriterApplication()
@@ -24,6 +27,11 @@ public class WpsWriterApplication : IOfficeApplication
         {
             throw new InvalidOperationException("无法启动WPS Writer，请确保已安装WPS Office并使用 'KWps.Application' ProgID", ex);
         }
+    }
+
+    public WpsWriterApplication(Action<string> logAction) : this()
+    {
+        _logAction = logAction;
     }
 
     public void OpenDocument(string filePath)
@@ -100,7 +108,7 @@ public class WpsWriterApplication : IOfficeApplication
             catch (Exception ex)
             {
                 // 批注删除失败时记录但不中断处理
-                System.Diagnostics.Debug.WriteLine($"删除批注时出错: {ex.Message}");
+                _logAction?.Invoke($"⚠️ WPS Writer: 批注删除失败，PDF可能保留批注 - {ex.Message}");
             }
 
             // 5. 接受所有修订标记
@@ -115,7 +123,7 @@ public class WpsWriterApplication : IOfficeApplication
             catch (Exception ex)
             {
                 // 修订处理失败时记录但不中断处理
-                System.Diagnostics.Debug.WriteLine($"接受修订时出错: {ex.Message}");
+                _logAction?.Invoke($"⚠️ WPS Writer: 修订接受失败，PDF可能保留修订标记 - {ex.Message}");
             }
 
             // 6. 保存临时文档的更改
@@ -161,7 +169,7 @@ public class WpsWriterApplication : IOfficeApplication
                     Marshal.ReleaseComObject(_document);
                 _document = null;
             }
-            catch { }
+            catch { /* COM清理失败不影响程序继续 */ }
         }
     }
 
@@ -178,7 +186,7 @@ public class WpsWriterApplication : IOfficeApplication
                 _application = null;
             }
         }
-        catch { }
+        catch { /* COM清理失败不影响程序继续 */ }
     }
 }
 
@@ -187,6 +195,7 @@ public class WpsSpreadsheetApplication : IOfficeApplication
 {
     private dynamic _application;
     private dynamic _workbook;
+    private string _tempFilePath; // 用于跟踪临时文件路径
     public bool IsConvertOneSheetOnePDF { get; set; } = true;
 
     public WpsSpreadsheetApplication()
@@ -208,9 +217,20 @@ public class WpsSpreadsheetApplication : IOfficeApplication
     {
         try
         {
-            // Use the same pattern as standard implementation with missing parameters
-            object missing = Type.Missing;
-            _workbook = _application.Workbooks.Open(filePath, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing);
+            // 如果是网络路径，创建本地临时副本
+            if (NetworkPathHelper.IsNetworkPath(filePath))
+            {
+                _tempFilePath = NetworkPathHelper.CreateLocalTempCopy(filePath);
+                // Use the same pattern as standard implementation with missing parameters
+                object missing = Type.Missing;
+                _workbook = _application.Workbooks.Open(_tempFilePath, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing);
+            }
+            else
+            {
+                // Use the same pattern as standard implementation with missing parameters
+                object missing = Type.Missing;
+                _workbook = _application.Workbooks.Open(filePath, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing, missing);
+            }
         }
         catch (Exception ex)
         {
@@ -224,7 +244,11 @@ public class WpsSpreadsheetApplication : IOfficeApplication
         {
             try
             {
-                var directory = Path.GetDirectoryName(toFilePath);
+                // 检查目标路径是否为网络路径
+                bool isNetworkOutput = NetworkPathHelper.IsNetworkPath(toFilePath);
+                string actualOutputPath = isNetworkOutput ? NetworkPathHelper.CreateLocalTempOutputPath(toFilePath) : toFilePath;
+
+                var directory = Path.GetDirectoryName(actualOutputPath);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
@@ -232,34 +256,58 @@ public class WpsSpreadsheetApplication : IOfficeApplication
 
                 if (IsConvertOneSheetOnePDF)
                 {
-                    string fileExt = Path.GetExtension(toFilePath);
-                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(toFilePath);
+                    string fileExt = Path.GetExtension(actualOutputPath);
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(actualOutputPath);
 
                     foreach (var sheetObj in _workbook.Worksheets)
                     {
                         dynamic sheet = null;
+                        string sheetTempPath = null;
+                        string finalSheetPath = null;
                         try
                         {
                             sheet = sheetObj; // dynamic cast
+
+                            // 检查 Sheet 是否可见（跳过隐藏的 Sheet）
+                            // WPS: Visible 属性值：-1 = 可见，0 = 隐藏，2 = 非常隐藏
+                            int visibilityStatus = sheet.Visible;
+                            if (visibilityStatus != -1)
+                            {
+                                continue; // 跳过隐藏的 Sheet
+                            }
+
                             string sheetName = sheet.Name;
                             string safeSheetName = string.Join("_", sheetName.Split(Path.GetInvalidFileNameChars()));
-                            string singleSheetPdfPath = Path.Combine(directory, $"{fileNameWithoutExt}_{safeSheetName}{fileExt}");
+                            sheetTempPath = Path.Combine(directory, $"{fileNameWithoutExt}_{safeSheetName}{fileExt}");
                             object missing = Type.Missing;
-                            sheet.ExportAsFixedFormat(0, singleSheetPdfPath, 0, true, false, missing, missing, missing, missing);
+                            sheet.ExportAsFixedFormat(0, sheetTempPath, 0, true, false, missing, missing, missing, missing);
+
+                            // 如果是网络输出，复制到最终位置
+                            if (isNetworkOutput)
+                            {
+                                string finalDirectory = Path.GetDirectoryName(toFilePath);
+                                finalSheetPath = Path.Combine(finalDirectory, $"{Path.GetFileNameWithoutExtension(toFilePath)}_{safeSheetName}{Path.GetExtension(toFilePath)}");
+                                NetworkPathHelper.CopyToNetworkPath(sheetTempPath, finalSheetPath);
+                                NetworkPathHelper.CleanupTempFile(sheetTempPath);
+                            }
                         }
                         catch (Exception)
                         {
-                            try
+                            // 清理临时文件
+                            if (isNetworkOutput && !string.IsNullOrEmpty(sheetTempPath))
                             {
-                                // 静默处理工作表导出错误
+                                NetworkPathHelper.CleanupTempFile(sheetTempPath);
                             }
-                            catch { }
+                            // 记录导出sheet失败的警告
+#if DEBUG
+                            // System.Diagnostics.Debug.WriteLine($"[WPS] Sheet导出失败: {sheet?.Name}, 错误: {ex.Message}");
+#endif
                         }
                         finally
                         {
                             if (sheet != null && Marshal.IsComObject(sheet))
                             {
-                                try { Marshal.ReleaseComObject(sheet); } catch { }
+                                try { Marshal.ReleaseComObject(sheet); } catch { /* COM清理失败不影响程序继续 */ }
                             }
                             sheet = null;
                         }
@@ -272,7 +320,14 @@ public class WpsSpreadsheetApplication : IOfficeApplication
                 {
                     // Use the same pattern as standard implementation for full workbook export
                     object missing = Type.Missing;
-                    _workbook.ExportAsFixedFormat(0, toFilePath, 0, true, false, missing, missing, missing, missing);
+                    _workbook.ExportAsFixedFormat(0, actualOutputPath, 0, true, false, missing, missing, missing, missing);
+
+                    // 如果是网络输出，复制到最终位置
+                    if (isNetworkOutput)
+                    {
+                        NetworkPathHelper.CopyToNetworkPath(actualOutputPath, toFilePath);
+                        NetworkPathHelper.CleanupTempFile(actualOutputPath);
+                    }
                 }
             }
             catch (Exception ex)
@@ -293,7 +348,14 @@ public class WpsSpreadsheetApplication : IOfficeApplication
                     Marshal.ReleaseComObject(_workbook);
                 _workbook = null;
             }
-            catch { }
+            catch { /* COM清理失败不影响程序继续 */ }
+        }
+
+        // 清理临时文件
+        if (!string.IsNullOrEmpty(_tempFilePath))
+        {
+            NetworkPathHelper.CleanupTempFile(_tempFilePath);
+            _tempFilePath = null;
         }
     }
 
@@ -310,7 +372,7 @@ public class WpsSpreadsheetApplication : IOfficeApplication
                 _application = null;
             }
         }
-        catch { }
+        catch { /* COM清理失败不影响程序继续 */ }
     }
 }
 
@@ -319,6 +381,7 @@ public class WpsPresentationApplication : IOfficeApplication
 {
     private dynamic _application;
     private dynamic _presentation;
+    private string _tempFilePath; // 用于跟踪临时文件路径
 
     public WpsPresentationApplication()
     {
@@ -341,9 +404,20 @@ public class WpsPresentationApplication : IOfficeApplication
     {
         try
         {
-            // Use the exact same pattern as standard implementation
-            // MsoTriState.msoCTrue = -1 (equivalent to the reference implementation)
-            _presentation = _application.Presentations.Open(filePath, -1, -1, -1);
+            // 如果是网络路径，创建本地临时副本
+            if (NetworkPathHelper.IsNetworkPath(filePath))
+            {
+                _tempFilePath = NetworkPathHelper.CreateLocalTempCopy(filePath);
+                // Use the exact same pattern as standard implementation
+                // MsoTriState.msoCTrue = -1 (equivalent to the reference implementation)
+                _presentation = _application.Presentations.Open(_tempFilePath, -1, -1, -1);
+            }
+            else
+            {
+                // Use the exact same pattern as standard implementation
+                // MsoTriState.msoCTrue = -1 (equivalent to the reference implementation)
+                _presentation = _application.Presentations.Open(filePath, -1, -1, -1);
+            }
         }
         catch (Exception ex)
         {
@@ -355,9 +429,13 @@ public class WpsPresentationApplication : IOfficeApplication
     {
         if (_presentation != null)
         {
+            // 检查目标路径是否为网络路径
+            bool isNetworkOutput = NetworkPathHelper.IsNetworkPath(toFilePath);
+            string actualOutputPath = isNetworkOutput ? NetworkPathHelper.CreateLocalTempOutputPath(toFilePath) : toFilePath;
+
             try
             {
-                var directory = Path.GetDirectoryName(toFilePath);
+                var directory = Path.GetDirectoryName(actualOutputPath);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
@@ -365,10 +443,22 @@ public class WpsPresentationApplication : IOfficeApplication
 
                 // Use SaveAs method exactly as shown in the standard reference code
                 // PpSaveAsFileType.ppSaveAsPDF = 32, MsoTriState.msoTrue = -1
-                _presentation.SaveAs(toFilePath, 32, -1);
+                _presentation.SaveAs(actualOutputPath, 32, -1);
+
+                // 如果是网络输出，复制到最终位置
+                if (isNetworkOutput)
+                {
+                    NetworkPathHelper.CopyToNetworkPath(actualOutputPath, toFilePath);
+                    NetworkPathHelper.CleanupTempFile(actualOutputPath);
+                }
             }
             catch (Exception ex)
             {
+                // 清理临时文件
+                if (isNetworkOutput && !string.IsNullOrEmpty(actualOutputPath) && File.Exists(actualOutputPath))
+                {
+                    NetworkPathHelper.CleanupTempFile(actualOutputPath);
+                }
                 throw new InvalidOperationException($"无法保存PDF: {toFilePath}, 错误: {ex.Message}", ex);
             }
         }
@@ -386,7 +476,14 @@ public class WpsPresentationApplication : IOfficeApplication
                     Marshal.ReleaseComObject(_presentation);
                 _presentation = null;
             }
-            catch { }
+            catch { /* COM清理失败不影响程序继续 */ }
+        }
+
+        // 清理临时文件
+        if (!string.IsNullOrEmpty(_tempFilePath))
+        {
+            NetworkPathHelper.CleanupTempFile(_tempFilePath);
+            _tempFilePath = null;
         }
     }
 
@@ -403,6 +500,6 @@ public class WpsPresentationApplication : IOfficeApplication
                 _application = null;
             }
         }
-        catch { }
+        catch { /* COM清理失败不影响程序继续 */ }
     }
 }
